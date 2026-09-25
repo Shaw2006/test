@@ -6,8 +6,8 @@
 //   - anon public key = eyJhbGciOi... (long JWT)  OR  sb_publishable_...
 // NEVER use sb_secret_ or service_role key in this frontend file.
 // ============================================================
-const SUPABASE_URL = "YOUR_PROJECT_URL"; // e.g. "https://xyzcompany.supabase.co"
-const SUPABASE_KEY = "YOUR_ANON_PUBLIC_KEY"; // e.g. "eyJhbGciOi..."
+const SUPABASE_URL = "https://yrmwlyetsjhrzotrayey.supabase.co"; // TODO: replace with your Project URL, e.g. "https://abcdefgh.supabase.co"
+const SUPABASE_KEY = "sb_publishable_m4Bq-9UwS48mzpT3JKTxPQ_WRU1_4ai";
 
 const STATUS_KEY = "barber_status"; // localStorage cache key: "OPEN" | "CLOSED"
 const TABLE = "settings";
