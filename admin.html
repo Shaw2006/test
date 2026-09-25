@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Barber Admin</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase.js"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #111;
+            color: white;
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .box {
+            max-width: 400px;
+            margin: auto;
+            background: #1c1c1c;
+            padding: 30px;
+            border-radius: 20px;
+        }
+
+        h1 {
+            margin-bottom: 30px;
+        }
+
+        #current-status {
+            font-size: 28px;
+            margin: 25px 0;
+            font-weight: bold;
+        }
+
+        button {
+            width: 100%;
+            padding: 18px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 12px;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .open {
+            background: #22c55e;
+            color: white;
+        }
+
+        .closed {
+            background: #ef4444;
+            color: white;
+        }
+
+        #message {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="box">
+
+    <h1>Barber Admin</h1>
+
+    <div>
+        Current status:
+    </div>
+
+    <div id="current-status">
+        Loading...
+    </div>
+
+    <button class="open" onclick="changeStatus('OPEN')">
+        🟢 OPEN
+    </button>
+
+    <button class="closed" onclick="changeStatus('CLOSED')">
+        🔴 CLOSED
+    </button>
+
+    <div id="message"></div>
+    <div id="config-warning" style="margin-top:15px;font-size:13px;color:#fbbf24;display:none;">
+        ⚠️ Supabase not configured — status will only change on this browser, not for everyone.
+        Paste URL + anon key in supabase.js.
+    </div>
+
+</div>
+
+<script>
+
+// Show current PUBLIC status on load
+async function loadStatus() {
+    if (!isSupabaseConfigured || !isSupabaseConfigured()) {
+        document.getElementById("config-warning").style.display = "block";
+    }
+    try {
+        const status = await getCurrentStatus();
+        document.getElementById("current-status").textContent = status;
+    } catch (e) {
+        console.error(e);
+        document.getElementById("current-status").textContent = "ERROR";
+        document.getElementById("message").textContent = "❌ " + (e.message || e);
+    }
+}
+
+
+// Click OPEN -> EVERYONE on index.html sees OPEN. Click CLOSED -> everyone sees CLOSED.
+async function changeStatus(newStatus) {
+    const msg = document.getElementById("message");
+    const buttons = document.querySelectorAll("button");
+    msg.textContent = "Updating for everyone...";
+    buttons.forEach(b => b.disabled = true);
+
+    try {
+        await saveStatus(newStatus);
+
+        document.getElementById("current-status").textContent = newStatus;
+        msg.textContent = "✅ " + newStatus + " is now live for everyone!";
+    } catch (e) {
+        console.error(e);
+        msg.textContent = "❌ Error: " + (e.message || e);
+    } finally {
+        buttons.forEach(b => b.disabled = false);
+    }
+}
+
+
+loadStatus();
+
+// Keep admin in sync if status changes elsewhere
+try {
+  if (typeof supabaseClient !== "undefined" && supabaseClient) {
+    supabaseClient
+      .channel("admin-settings-status")
+      .on("postgres_changes",
+        { event: "UPDATE", schema: "public", table: "settings", filter: "id=eq.1" },
+        (payload) => {
+          const s = payload?.new?.status;
+          if (s === "OPEN" || s === "CLOSED") {
+            document.getElementById("current-status").textContent = s;
+            setLocalStatus(s);
+          }
+        })
+      .subscribe();
+  }
+} catch (e) { console.warn(e); }
+
+</script>
+
+</body>
+</html>
